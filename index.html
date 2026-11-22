@@ -255,7 +255,7 @@
                     <div>
                         <h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                             <span>🎧</span>
-                            <span>탭 내부 오디오 실시간 받아쓰기 (Whisper AI)</span>
+                            <span>실시간 받아쓰기 · 마이크 / 방송 탭 (Whisper AI)</span>
                         </h2>
                         <p class="text-[11px] text-slate-400 mt-0.5">외부 잡음 없이 브라우저 탭 오디오만 텍스트로 전환합니다.</p>
                     </div>
@@ -264,7 +264,7 @@
                         <select id="whisperLang" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
                             <option value="en" selected>인식 언어: 영어 (English)</option>
                             <option value="ko">인식 언어: 한국어 (Korean)</option>
-                            <option value="ja">인식 언어: 일본어 (Japanese)</option>
+                            <option value="auto">인식 언어: 자동 (영어·한국어)</option>
                         </select>
 
                         <button id="btnStartCapture" onclick="startTabAudioCapture()"
@@ -280,6 +280,12 @@
                     </div>
                 </div>
 
+                <div class="flex flex-wrap gap-2 items-center text-xs">
+                  <button id="btnMicStart" onclick="startMicRecognition()" class="px-3 py-2 rounded-lg bg-emerald-700 font-bold">🎙️ 마이크 빠른 받아쓰기 시작</button>
+                  <button id="btnMicStop" onclick="stopMicRecognition()" disabled class="px-3 py-2 rounded-lg bg-slate-700 disabled:opacity-40">⏹️ 마이크 중지</button>
+                  <button onclick="downloadTranscript()" class="px-3 py-2 rounded-lg bg-indigo-700">💾 받아쓰기 TXT 저장</button>
+                  <span class="text-slate-400">방송 탭 음성은 위의 받아쓰기 시작 버튼을 사용하세요.</span>
+                </div>
                 <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div class="flex items-center gap-2 text-xs font-medium text-slate-300">
                         <span id="captureStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-500 shrink-0"></span>
@@ -400,24 +406,25 @@
                 <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2.5">
                     <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[200px]">
                         <span class="text-xs font-bold text-slate-300 shrink-0">🎙️ TTS 음성:</span>
-                        <select id="webTtsVoiceSelect" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white flex-1 max-w-xs truncate focus:outline-none">
-                            <option value="">기본 시스템 음성</option>
+                        <select id="webTtsVoiceSelect" class="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white flex-1 max-w-xs">
+                            <option value="female" selected>여성 음성 (기본)</option><option value="male">남성 음성</option>
                         </select>
                         <div class="flex items-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1">
                             <span class="text-[11px] text-slate-400">속도:</span>
                             <select id="webTtsRate" class="bg-transparent text-xs font-bold text-white focus:outline-none">
-                                <option value="0.75">0.75x</option>
+                                <option value="0.8">0.8x</option>
                                 <option value="1.0" selected>1.0x</option>
-                                <option value="1.25">1.25x</option>
+                                <option value="1.2">1.2x</option>
                             </select>
                         </div>
                     </div>
 
+                    <span id="webTtsStatus" role="status" aria-live="polite" class="text-xs text-emerald-300">● 대기 중</span>
                     <div class="flex items-center gap-1.5">
-                        <button onclick="speakWebTts('tgt')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg">
+                        <button id="webTtsPlayButton" onclick="speakWebTts('tgt')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg">
                             ▶️ 재생
                         </button>
-                        <button onclick="pauseOrResumeWebTts()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg">
+                        <button id="webTtsPauseButton" onclick="pauseOrResumeWebTts()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg">
                             ⏸️ 일시정지
                         </button>
                         <button onclick="stopWebTts()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg">
@@ -431,12 +438,13 @@
         <!-- TAB 4: MP3 저장 -->
         <section id="panel-mp3" class="hidden space-y-4">
             <div class="max-w-3xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-lg space-y-4">
+                <p class="text-xs text-amber-200 bg-amber-950/40 border border-amber-800 rounded-lg p-2">MP3 저장은 Windows 보조 서버가 필요합니다. ZIP의 START_TTS_SERVER.bat 실행 후 사용하세요. 미리듣기는 서버 없이 가능합니다.</p>
                 <div class="border-b border-slate-800 pb-3">
                     <h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                         <span>🎵</span>
-                        <span>영어·한국어 MP3 음성 생성 및 파일 저장 (LameJS)</span>
+                        <span>영어·한국어 MP3 음성 생성 및 파일 저장</span>
                     </h2>
-                    <p class="text-[11px] text-slate-400 mt-0.5">원문 또는 번역문을 고음질 MP3 파일로 인코딩합니다.</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Windows 음성 생성 서비스를 통해 MP3 파일로 저장합니다.</p>
                 </div>
 
                 <div>
@@ -467,12 +475,28 @@
                     <div>
                         <label for="mp3AccentSelect" class="block text-xs font-bold text-slate-300 mb-1">3. 발음 언어 선택</label>
                         <select id="mp3AccentSelect" class="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
+                            <option value="auto" selected>🌐 영어·한국어 자동 전환</option>
                             <option value="en-US">🇺🇸 영어 (미국 발음)</option>
                             <option value="ko-KR">🇰🇷 한국어</option>
-                            <option value="ja-JP">🇯🇵 일본어</option>
+                            
                         </select>
                     </div>
 
+                    <div>
+                        <label for="mp3GenderSelect" class="block text-xs font-bold text-slate-300 mb-1">목소리 선택</label>
+                        <select id="mp3GenderSelect" class="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-bold text-white">
+                            <option value="female" selected>여성 (기본)</option>
+                            <option value="male">남성</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="mp3SpeedSelect" class="block text-xs font-bold text-slate-300 mb-1">읽기 속도</label>
+                        <select id="mp3SpeedSelect" class="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800 text-xs font-bold text-white">
+                            <option value="-20%">느리게 (0.8배)</option>
+                            <option value="+0%" selected>보통 (1.0배)</option>
+                            <option value="+20%">빠르게 (1.2배)</option>
+                        </select>
+                    </div>
                     <div>
                         <label for="mp3FileName" class="block text-xs font-bold text-slate-300 mb-1">4. 저장 파일명</label>
                         <input type="text" id="mp3FileName" value="voice_output.mp3"
@@ -487,13 +511,18 @@
                         <span id="btnGenerateMp3Text">MP3 음성 생성하기</span>
                     </button>
 
-                    <button type="button" onclick="previewBrowserSpeech()"
+                    <button id="mp3PreviewButton" type="button" onclick="previewEvergreenMp3()"
                         class="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-bold rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-1.5">
                         <span>🔊</span>
                         <span>미리듣기</span>
                     </button>
                 </div>
 
+                <div class="flex flex-wrap items-center gap-2">
+                    <button id="mp3PauseButton" type="button" onclick="toggleTtsPause()" class="px-4 py-2 rounded-lg bg-amber-600 text-white text-xs font-bold">⏸️ 일시정지</button>
+                    <button id="mp3StopButton" type="button" onclick="stopAllTts()" class="px-4 py-2 rounded-lg bg-rose-600 text-white text-xs font-bold">⏹️ 정지</button>
+                    <span id="ttsPlaybackStatus" role="status" aria-live="polite" class="text-xs text-emerald-300">● 대기 중</span>
+                </div>
                 <div id="mp3StatusBox" class="text-xs font-medium px-3.5 py-2.5 rounded-xl bg-slate-950 text-slate-300 border border-slate-800">
                     💡 문장과 언어를 선택한 뒤 <strong>[🎵 MP3 음성 생성하기]</strong>를 누르세요.
                 </div>
@@ -518,6 +547,7 @@
         </section>
     </main>
 
+    <script type="application/json" id="evergreenVersion">{"version":"TTS-control-fix"}</script>
     <!-- 토스트 컨테이너 -->
     <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -832,7 +862,7 @@
             if (!recordedBlobUrl) return;
             const a = document.createElement('a');
             a.href = recordedBlobUrl;
-            a.download = document.getElementById('recDownloadFilename').value || `live_record.${recordedFileExt}`;
+            a.download = (document.getElementById('recDownloadFilename').value || 'live_record').replace(/\.(mp4|webm)$/i, '') + '.' + recordedFileExt;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -856,11 +886,12 @@
             if (isWhisperLoading) return null;
             isWhisperLoading = true;
             try {
-                whisperTranscriber = await window.transformersPipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
+                whisperTranscriber = await window.transformersPipeline('automatic-speech-recognition', 'Xenova/whisper-small');
                 isWhisperLoading = false;
                 return whisperTranscriber;
-            } catch (_) {
+            } catch (err) {
                 isWhisperLoading = false;
+                setCaptureStatus('Whisper 모델을 불러오지 못했습니다: ' + err.message, 'error');
                 return null;
             }
         }
@@ -883,11 +914,14 @@
                 sttAudioContext.createMediaStreamSource(new MediaStream([audioTracks[0]])).connect(sttAnalyserNode);
                 visualizeSttLevel();
 
+                setCaptureStatus('AI 모델을 불러오는 중입니다. 첫 실행은 시간이 걸립니다…', 'loading');
                 const transcriber = await ensureWhisperModel();
                 if (transcriber && isSttCapturing) {
+                    setCaptureStatus('탭 음성 인식 중 (약 5~15초 지연될 수 있음)', 'active');
                     startSttChunkLoop(new MediaStream([audioTracks[0]]), transcriber);
                 }
-            } catch (_) {
+            } catch (err) {
+                setCaptureStatus('캡처 오류: ' + err.message, 'error');
                 isSttCapturing = false;
             }
         }
@@ -916,7 +950,9 @@
                             const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
                             const decoded = await ctx.decodeAudioData(buf);
                             await ctx.close();
-                            const res = await transcriber(decoded.getChannelData(0), { language: document.getElementById('whisperLang').value });
+                            const selectedLang = document.getElementById('whisperLang').value;
+                            const opts = selectedLang === 'auto' ? {} : { language: selectedLang };
+                            const res = await transcriber(decoded.getChannelData(0), opts);
                             const text = (res?.text || '').trim();
                             if (text) {
                                 const txtSrc = document.getElementById('txtSrc');
@@ -924,7 +960,7 @@
                                 syncAllTextViews('src');
                                 if (document.getElementById('autoTranslateCheck').checked) runParallelTranslate(true);
                             }
-                        } catch (_) {}
+                        } catch (err) { setCaptureStatus('음성 분석 오류: ' + err.message, 'error'); }
                     }
                 };
                 sttMediaRecorder.start();
@@ -938,6 +974,7 @@
             if (sttLevelAnimId) cancelAnimationFrame(sttLevelAnimId);
             if (sttMediaStream) { sttMediaStream.getTracks().forEach(t => t.stop()); sttMediaStream = null; }
             document.getElementById('audioLevelBar').style.width = '0%';
+            setCaptureStatus('받아쓰기 중지', 'idle');
         }
 
         function swapLanguages() {
@@ -979,33 +1016,68 @@
             } catch (_) {}
         }
 
-        function loadWebSpeechVoices() {
-            if (!('speechSynthesis' in window)) return;
-            const select = document.getElementById('webTtsVoiceSelect');
-            const voices = window.speechSynthesis.getVoices();
-            select.innerHTML = '<option value="">기본 음성</option>';
-            voices.forEach((v, idx) => select.add(new Option(`${v.name} (${v.lang})`, idx)));
+        // One audio player for all previews. A new request cancels the previous one.
+        let ttsAudio = null, ttsObjectUrl = null, ttsRequest = null, ttsSerial = 0;
+        function setTtsState(message) {
+            for (const id of ['webTtsStatus','ttsPlaybackStatus']) {
+                const el = document.getElementById(id); if (el) el.textContent = message;
+            }
+            const pause = document.getElementById('mp3PauseButton');
+            if (pause) pause.textContent = message.includes('일시정지') ? '▶️ 계속' : '⏸️ 일시정지';
+            const wp = document.getElementById('webTtsPauseButton');
+            if (wp) wp.textContent = message.includes('일시정지') ? '▶️ 계속' : '⏸️ 일시정지';
         }
-
-        function speakWebTts(target) {
-            if (!('speechSynthesis' in window)) return;
-            const text = target === 'src' ? document.getElementById('txtSrc').value : document.getElementById('txtTgt').value;
-            if (!text) return;
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = parseFloat(document.getElementById('webTtsRate').value) || 1.0;
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function pauseOrResumeWebTts() {
-            if (!('speechSynthesis' in window)) return;
-            if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-            else if (window.speechSynthesis.speaking) window.speechSynthesis.pause();
-        }
-
-        function stopWebTts() {
+        function stopAllTts() {
+            ++ttsSerial;
+            if (ttsRequest) { ttsRequest.abort(); ttsRequest = null; }
+            if (ttsAudio) { ttsAudio.pause(); ttsAudio.removeAttribute('src'); ttsAudio.load(); ttsAudio = null; }
+            const saved = document.getElementById('mp3AudioPlayer');
+            if (saved && !saved.paused) saved.pause();
+            if (ttsObjectUrl) { URL.revokeObjectURL(ttsObjectUrl); ttsObjectUrl = null; }
             if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            setTtsState('⏹️ 정지됨');
         }
+        function toggleTtsPause() {
+            const a = ttsAudio && !ttsAudio.ended ? ttsAudio : document.getElementById('mp3AudioPlayer');
+            if (!a || !a.src) { setTtsState('● 재생할 음성이 없습니다'); return; }
+            if (a.paused) { a.play().then(()=>setTtsState('▶️ 재생 중')).catch(e=>setTtsState('오류: '+e.message)); }
+            else { a.pause(); setTtsState('⏸️ 일시정지'); }
+        }
+        async function playTtsText(text, language, gender, rate) {
+            stopAllTts();
+            const serial = ttsSerial;
+            const controller = new AbortController(); ttsRequest = controller;
+            setTtsState('⏳ 음성 생성 중…');
+            try {
+                const res = await fetch('http://127.0.0.1:8765/tts', {
+                    method:'POST', headers:{'Content-Type':'application/json'}, signal:controller.signal,
+                    body:JSON.stringify({text, language, gender, rate})
+                });
+                if (!res.ok) throw new Error((await res.text()).slice(0,160));
+                const blob = await res.blob();
+                if (serial !== ttsSerial) return;
+                ttsObjectUrl = URL.createObjectURL(blob);
+                const audio = new Audio(ttsObjectUrl); ttsAudio = audio;
+                audio.onended = () => { if(serial===ttsSerial) setTtsState('✓ 재생 완료'); };
+                audio.onerror = () => { if(serial===ttsSerial) setTtsState('❌ 오디오 재생 오류'); };
+                await audio.play();
+                if (serial===ttsSerial) setTtsState('▶️ 재생 중');
+            } catch(e) {
+                if(e.name !== 'AbortError' && serial===ttsSerial) setTtsState('❌ 서버 오류: '+e.message);
+            } finally { if(ttsRequest===controller) ttsRequest=null; }
+        }
+        function loadWebSpeechVoices() { /* Browser voices intentionally replaced by shared TTS server. */ }
+        function speakWebTts(target) {
+            const text = (target==='src' ? document.getElementById('txtSrc') : document.getElementById('txtTgt')).value.trim();
+            if (!text) { setTtsState('⚠️ 읽을 문장이 없습니다'); return; }
+            const lang = 'auto';
+            const gender = document.getElementById('webTtsVoiceSelect').value;
+            const speed = parseFloat(document.getElementById('webTtsRate').value);
+            const rate = speed < 1 ? '-20%' : speed > 1 ? '+20%' : '+0%';
+            playTtsText(text, lang, gender, rate);
+        }
+        function pauseOrResumeWebTts() { toggleTtsPause(); }
+        function stopWebTts() { stopAllTts(); }
 
         function selectMp3Source(sourceType) {
             selectedMp3Source = sourceType;
@@ -1023,9 +1095,15 @@
         }
 
         async function fetchTtsAudioArrayBuffer(text, accentCode) {
-            const url = `https://translate.googleapis.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${encodeURIComponent(accentCode)}&q=${encodeURIComponent(text)}`;
-            const res = await fetch(url);
-            return await res.arrayBuffer();
+            const response = await fetch('http://127.0.0.1:8765/tts', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({text, language: accentCode, gender: document.getElementById("mp3GenderSelect").value, rate: document.getElementById("mp3SpeedSelect").value})
+            });
+            if (!response.ok) {
+                const message = await response.text();
+                throw new Error('Windows TTS 서버 오류 ('+response.status+'): '+message.slice(0,180));
+            }
+            return await response.arrayBuffer();
         }
 
         function encodeFloat32ToMp3Blob(float32Samples, sampleRate) {
@@ -1046,28 +1124,38 @@
             return new Blob(chunks, { type: 'audio/mp3' });
         }
 
+
+        async function previewEvergreenMp3() {
+            const text = document.getElementById('mp3TextEditor').value.trim();
+            if (!text) { setTtsState('⚠️ 읽을 문장을 입력하세요'); return; }
+            await playTtsText(text, document.getElementById('mp3AccentSelect').value,
+                document.getElementById('mp3GenderSelect').value, document.getElementById('mp3SpeedSelect').value);
+        }
+
         async function generateMp3Audio() {
+            stopAllTts();
             const text = document.getElementById('mp3TextEditor').value.trim();
             if (!text) { alert('변환할 텍스트를 입력해주세요.'); return; }
             const accentCode = document.getElementById('mp3AccentSelect').value;
-
+            const button = document.getElementById('btnGenerateMp3');
+            const status = document.getElementById('mp3StatusBox');
+            button.disabled = true;
+            status.textContent = 'Windows TTS 서버에서 MP3 생성 중…';
             try {
                 const arrayBuf = await fetchTtsAudioArrayBuffer(text, accentCode);
-                const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const audioBuf = await decodeCtx.decodeAudioData(arrayBuf);
-                const mp3Blob = encodeFloat32ToMp3Blob(audioBuf.getChannelData(0), audioBuf.sampleRate);
-                await decodeCtx.close();
-
+                if (!arrayBuf.byteLength) throw new Error('빈 MP3가 반환되었습니다.');
+                const mp3Blob = new Blob([arrayBuf], {type:'audio/mpeg'});
                 if (currentMp3BlobUrl) URL.revokeObjectURL(currentMp3BlobUrl);
                 currentMp3Blob = mp3Blob;
                 currentMp3BlobUrl = URL.createObjectURL(mp3Blob);
-
                 document.getElementById('mp3AudioPlayer').src = currentMp3BlobUrl;
                 document.getElementById('mp3FileSizeTag').textContent = `${(mp3Blob.size / 1024).toFixed(1)} KB`;
+                status.textContent = 'MP3 생성 완료. 아래 재생 버튼으로 확인한 뒤 저장하세요.';
                 showToast('MP3 생성 완료!', 'success');
-            } catch (_) {
-                showToast('TTS 서버 연결 실패 — [미리듣기]를 이용해 주세요.', 'warning');
-            }
+            } catch (err) {
+                status.textContent = 'MP3 생성 실패: '+err.message+' | START_TTS_SERVER.bat 실행 및 인터넷 연결을 확인하세요.';
+                showToast('MP3 생성 실패: 서버 연결을 확인하세요.', 'warning');
+            } finally { button.disabled = false; }
         }
 
         function downloadGeneratedMp3() {
@@ -1083,8 +1171,55 @@
         function previewBrowserSpeech() {
             const text = document.getElementById('mp3TextEditor').value.trim();
             if (!text) return;
-            window.speechSynthesis.cancel();
-            window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+            previewEvergreenMp3();
+        }
+
+        function setCaptureStatus(message, state='idle') {
+            document.getElementById('captureStatusText').textContent = message;
+            document.getElementById('captureStatusDot').className = 'w-2.5 h-2.5 rounded-full shrink-0 '+(state==='active'?'bg-emerald-400':state==='error'?'bg-rose-500':state==='loading'?'bg-amber-400':'bg-slate-500');
+            document.getElementById('globalSttLabel').textContent = message.slice(0,30);
+        }
+        let micRecognition = null;
+        let micShouldRun = false;
+        function startMicRecognition() {
+            const API = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!API) { setCaptureStatus('이 Chrome 버전은 마이크 받아쓰기를 지원하지 않습니다.', 'error'); return; }
+            stopMicRecognition();
+            micShouldRun = true;
+            micRecognition = new API();
+            micRecognition.lang = document.getElementById('whisperLang').value === 'ko' ? 'ko-KR' : 'en-US';
+            micRecognition.continuous = true;
+            micRecognition.interimResults = true;
+            let interim = '';
+            micRecognition.onresult = event => {
+                for (let i=event.resultIndex;i<event.results.length;i++) {
+                    const text = event.results[i][0].transcript.trim();
+                    if (event.results[i].isFinal && text) {
+                        const field=document.getElementById('txtSrc');
+                        field.value += (field.value.trim()?'\n':'')+text;
+                        syncAllTextViews('src');
+                        if(document.getElementById('autoTranslateCheck').checked) runParallelTranslate(true);
+                    } else interim=text;
+                }
+                setCaptureStatus('마이크 인식 중'+(interim?' · '+interim.slice(0,55):''),'active');
+            };
+            micRecognition.onerror = e => setCaptureStatus('마이크 인식 오류: '+e.error,'error');
+            micRecognition.onend = () => {if(micShouldRun) {try{micRecognition.start();}catch(e){setCaptureStatus(e.message,'error');}}};
+            try {micRecognition.start(); setCaptureStatus('마이크 연결 중…','loading');} catch(e){setCaptureStatus(e.message,'error');}
+            document.getElementById('btnMicStart').disabled=true;
+            document.getElementById('btnMicStop').disabled=false;
+        }
+        function stopMicRecognition(){
+            micShouldRun=false;
+            if(micRecognition){try{micRecognition.abort();}catch(e){} micRecognition=null;}
+            document.getElementById('btnMicStart').disabled=false;
+            document.getElementById('btnMicStop').disabled=true;
+        }
+        function downloadTranscript(){
+            const txt=document.getElementById('txtSrc').value;
+            if(!txt.trim()){showToast('저장할 문서가 없습니다.','warning');return;}
+            const url=URL.createObjectURL(new Blob([txt],{type:'text/plain;charset=utf-8'}));
+            const a=document.createElement('a');a.href=url;a.download='Evergreen26_transcript.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
         }
     </script>
 </body>
